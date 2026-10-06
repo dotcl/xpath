@@ -33,7 +33,9 @@
   #+sbcl
   `(sb-int:with-float-traps-masked (:overflow :invalid :divide-by-zero)
      ,@body)
-  #-sbcl
+  #+dotcl
+  `(progn ,@body)
+  #-(or sbcl dotcl)
   (error "implement me"))
 
 (deftype xnum () 'number)
@@ -44,7 +46,8 @@
 (defun nan-p (xnum)
   (and (floatp xnum)
        #+sbcl (sb-ext:float-nan-p xnum)
-       #-sbcl (error "implement me")))
+       #+dotcl (dotnet:static "System.Double" "IsNaN" (float xnum 1d0))
+       #-(or sbcl dotcl) (error "implement me")))
 
 (defun x-zerop (xnum)
   (and (numberp xnum) (zerop xnum)))
@@ -58,7 +61,8 @@
 (defun inf-p (num)
   (and (floatp num)
        #+sbcl (sb-ext:float-infinity-p num)
-       #-sbcl (error "implement me")))
+       #+dotcl (dotnet:static "System.Double" "IsInfinity" (float num 1d0))
+       #-(or sbcl dotcl) (error "implement me")))
 
 (defun finite-p (num)
   (not (inf-p num)))
@@ -77,7 +81,10 @@
   ;; force inline division, otherwise division by zero still errors out:
   (declare (optimize (speed 3) (safety 0)))
   (/ (float a 1.0d0) (float b 1.0d0)))
-#-sbcl
+#+dotcl
+(defun xnum-/ (a b)
+  (/ (float a 1.0d0) (float b 1.0d0)))
+#-(or sbcl dotcl)
 (defun xnum-/ (a b)
   (error "implement me"))
 
@@ -97,9 +104,20 @@
   (f double-float)
   (g double-float))
 
+#+dotcl
+(defun fmod (f g)
+  (cond ((or (nan-p f) (nan-p g) (inf-p f))
+         (let ((inf (/ 1d0 0d0))) (- inf inf)))
+        ((inf-p g) f)
+        (t (let ((r (rem (rational f) (rational g))))
+             (if (zerop r)
+                 (float-sign f 0d0)
+                 (float r 1d0))))))
+
 (defun long-to-double (l)
   #+sbcl (sb-kernel:make-double-float (ldb (byte 32 32) l) (ldb (byte 32 0) l))
-  #-sbcl (error "implement me"))
+  #+dotcl (dotcl-float:bits-double-float l)
+  #-(or sbcl dotcl) (error "implement me"))
 
 (defvar +nan+ (long-to-double 9221120237041090560))
 
@@ -107,7 +125,8 @@
   (if (zerop g)
       +nan+
       #+sbcl (fmod (float f 1.0d0) (float g 1.0d0))
-      #-sbcl (error "implement me")))
+      #+dotcl (fmod (float f 1.0d0) (float g 1.0d0))
+      #-(or sbcl dotcl) (error "implement me")))
 
 ;; Round to an integer, not a float.  But still pass NaN and infinity through.
 (defun round-to-integer (a)

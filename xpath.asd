@@ -9,15 +9,16 @@
   :maintainer "Sharp Lispers <sharplispers@googlegroups.com>"
 
   :version "0.1"
-  :depends-on ("cxml" "parse-number" "cl-ppcre" "yacc")
+  :depends-on ("cxml" "parse-number" "cl-ppcre" "yacc"
+               (:feature :dotcl (:require "dotcl-float")))
 
   :serial t
   :components ((:file "package")
                (:file "utils")
                (:file "pipes")
                (:file "protocol")
-               #+sbcl (:file "xnum-ieee")
-               #-sbcl (:file "xnum")
+               #+(or sbcl dotcl) (:file "xnum-ieee")
+               #-(or sbcl dotcl) (:file "xnum")
                (:file "types")
                (:file "extensions")
                (:file "environment")
@@ -39,8 +40,8 @@
   :depends-on ("xpath")
   :serial t
   :components ((:file "test")
-               #+sbcl (:file "xnum-ieee-test")
-               #-sbcl (:file "xnum-test")
+               #+(or sbcl dotcl) (:file "xnum-ieee-test")
+               #-(or sbcl dotcl) (:file "xnum-test")
                (:file "parser-test")
                (:file "xpath-test"))
   :perform (test-op (o c)
