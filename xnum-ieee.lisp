@@ -46,7 +46,7 @@
 (defun nan-p (xnum)
   (and (floatp xnum)
        #+sbcl (sb-ext:float-nan-p xnum)
-       #+dotcl (dotnet:static "System.Double" "IsNaN" (float xnum 1d0))
+       #+dotcl (dotcl-float:float-nan-p xnum)
        #-(or sbcl dotcl) (error "implement me")))
 
 (defun x-zerop (xnum)
@@ -61,7 +61,7 @@
 (defun inf-p (num)
   (and (floatp num)
        #+sbcl (sb-ext:float-infinity-p num)
-       #+dotcl (dotnet:static "System.Double" "IsInfinity" (float num 1d0))
+       #+dotcl (dotcl-float:float-infinity-p num)
        #-(or sbcl dotcl) (error "implement me")))
 
 (defun finite-p (num)
